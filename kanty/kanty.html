@@ -1,0 +1,26 @@
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>感謝タイピング</title>
+</head>
+<script>
+    var kannsya = 1
+    var kannsyain = 0
+    alert("今から100回「感謝」と入力してください")
+    function input() {
+    var kannsyain = prompt(kannsya + "回目")
+    if (kannsyain == "感謝") {
+    if (99 < kannsya) {
+    alert("おめでとうございます。あなたは100回「感謝」と入力することで、100回「感謝」と入力することができました。")
+    } else {
+        kannsya++;
+        input()
+    }
+    } else {
+    alert("「感謝」と入力してください。")
+    input()
+    }
+}
+input()
+</script>
+</html>
