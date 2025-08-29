@@ -48,7 +48,7 @@ a {
   /*ダークモード*/
   @media (prefers-color-scheme: dark) {
 html {
-  font-size: 20px;
+  font-size: 16px;
   font-family: "Noto Sans JP", sans-serif;
   color: #ffffff;
 }
