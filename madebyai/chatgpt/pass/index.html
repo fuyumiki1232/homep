@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>簡易パスワードゲート</title>
+  <style>
+    :root { --gap: 14px; }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", sans-serif; margin: 0; background: #0b1020; color: #e9eef8; }
+    .wrap { min-height: 100svh; display: grid; place-items: center; padding: 24px; }
+    .card { width: min(520px, 92vw); background: #121a34; border: 1px solid #223264; border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.35); overflow: hidden; }
+    .header { padding: 22px 22px 6px; border-bottom: 1px solid #20305e; background: linear-gradient(180deg,#17224b,#131a36); }
+    .header h1 { margin: 0; font-size: 1.1rem; font-weight: 700; letter-spacing: .02em; }
+    .body { padding: 20px 22px 22px; display: grid; gap: var(--gap); }
+    label { font-size: .9rem; color: #c8d6ff; }
+    input[type="password"] { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid #334a90; background: #0f1732; color: #f4f7ff; outline: none; font-size: 16px; }
+    input[type="password"]:focus { border-color: #6ca1ff; box-shadow: 0 0 0 4px rgba(108,161,255,.15); }
+    .row { display: grid; gap: 10px; }
+    .actions { display: flex; gap: 10px; }
+    button { appearance: none; border: 1px solid #3659c9; background: #1b2d74; color: #e8f0ff; padding: 11px 14px; border-radius: 12px; cursor: pointer; font-weight: 600; }
+    button:hover { filter: brightness(1.05); }
+    .ghost { background: transparent; border-color: #334a90; }
+    .muted { font-size: .85rem; color: #9bb0e7; }
+    .error { color: #ff8c8c; font-size: .9rem; }
+    details { border: 1px dashed #334a90; border-radius: 12px; padding: 12px; }
+    details > summary { cursor: pointer; outline: none; }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Noto Sans Mono CJK JP", monospace; }
+    .ok { color: #7dffa3; font-weight: 700; }
+    .content { display: none; }
+    .content.show { display: block; }
+    .protected-card { background: #0f1730; border: 1px solid #2d447e; border-radius: 16px; padding: 16px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" id="card">
+      <div class="header">
+        <h1>🔐 簡易パスワードゲート（HTML+JSのみ）</h1>
+      </div>
+      <div class="body">
+        <!-- 1) 入力欄 -->
+        <div class="row">
+          <label for="pw">パスワード</label>
+          <input id="pw" type="password" placeholder="パスワードを入力" autocomplete="current-password" />
+          <div class="actions">
+            <button id="loginBtn">入る</button>
+            <button class="ghost" id="logoutBtn" title="保存したログイン状態を消します">ログアウト</button>
+          </div>
+          <p class="muted">学習用の“なんちゃって認証”です。HTML だけで動きますが、本物のセキュリティにはなりません。</p>
+          <p id="msg" class="error" role="status" aria-live="polite"></p>
+        </div>
+
+        <!-- 3) 保護コンテンツ（成功時にだけ表示） -->
+        <div id="secret" class="content">
+          <div class="protected-card">
+            <p class="ok">✅ 認証OK！</p>
+            <ul>
+              <li><a href="https://fuyumiki1232.github.io/success/">リンク</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <hr style="border-color:#223264;" />
+
+  <script>
+    // =============================================
+    // 設定：ここを変えるだけでパスワード変更
+    // 初期パスワードは "test1234" に設定しています。
+    // 下の“ハッシュ生成ツール”で作った文字列に置き換えてください。
+    // =============================================
+    const EXPECTED_HASH = "1f1b1508487ae8dd580114c184c78863ee4c87b23e0b79b3c0a951b70c4701c0"; // ダミー。実際は下の init で差し替え
+
+    // デモ用：最初のロード時に "test1234" の正しいハッシュを注入（説明簡略化のため）。
+    // 実運用では上の EXPECTED_HASH を固定文字列にしてください。
+    let EXPECTED = null;
+
+    // 連続失敗カウンタとロック（簡易）
+    let failCount = 0;
+    let lockUntil = 0;
+
+    const els = {
+      pw: document.getElementById('pw'),
+      loginBtn: document.getElementById('loginBtn'),
+      logoutBtn: document.getElementById('logoutBtn'),
+      msg: document.getElementById('msg'),
+      secret: document.getElementById('secret'),
+      plain: document.getElementById('plain'),
+      hashBtn: document.getElementById('hashBtn'),
+      hashOut: document.getElementById('hashOut'),
+    };
+
+    // ページロード時：ログイン状態やデモ用ハッシュを用意
+    window.addEventListener('DOMContentLoaded', async () => {
+      // デモ用："test1234" の SHA-256 を計算して EXPECTED に設定
+      EXPECTED = await sha256Hex('9563brmo');
+
+      // 保存されたログイン状態
+      const logged = localStorage.getItem('demo_logged') === '1';
+      if (logged) {
+        showSecret(true);
+      }
+
+      // Enter で送信
+      els.pw.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') els.loginBtn.click();
+      });
+    });
+
+    // ログイン処理
+    els.loginBtn.addEventListener('click', async () => {
+      const now = Date.now();
+      if (now < lockUntil) {
+        const sec = Math.ceil((lockUntil - now) / 1000);
+        return setMsg(`一時ロック中です。${sec} 秒後に再試行してください。`);
+      }
+
+      const pw = els.pw.value;
+      if (!pw) return setMsg('パスワードを入力してください。');
+
+      const hash = await sha256Hex(pw);
+      const ok = (hash === (EXPECTED ?? EXPECTED_HASH));
+
+      if (ok) {
+        setMsg('');
+        failCount = 0;
+        localStorage.setItem('demo_logged', '1');
+        showSecret(true);
+        els.pw.value = '';
+      } else {
+        failCount++;
+        if (failCount >= 5) {
+          // 5回連続ミスで30秒ロック（学習用）
+          lockUntil = Date.now() + 30 * 1000;
+          failCount = 0;
+          setMsg('失敗が多すぎます。30秒間ロックしました。');
+        } else {
+          setMsg('パスワードが違います。');
+        }
+      }
+    });
+
+    // ログアウト
+    els.logoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('demo_logged');
+      showSecret(false);
+      setMsg('ログアウトしました。');
+      els.pw.focus();
+    });
+
+    // ハッシュ生成ツール
+    els.hashBtn.addEventListener('click', async () => {
+      const text = els.plain.value ?? '';
+      if (!text) {
+        els.hashOut.textContent = '（入力が空です）';
+        return;
+      }
+      const h = await sha256Hex(text);
+      els.hashOut.textContent = h;
+    });
+
+    function showSecret(show) {
+      els.secret.classList.toggle('show', !!show);
+    }
+
+    function setMsg(text) {
+      els.msg.textContent = text;
+    }
+
+    // ---- ユーティリティ：SHA-256 を16進文字列で返す ----
+    async function sha256Hex(text) {
+      const enc = new TextEncoder().encode(text);
+      const buf = await crypto.subtle.digest('SHA-256', enc);
+      const bytes = new Uint8Array(buf);
+      return [...bytes].map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+  </script>
+</body>
+</html>

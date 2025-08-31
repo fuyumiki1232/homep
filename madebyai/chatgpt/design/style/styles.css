@@ -1,0 +1,97 @@
+/* 背景を水色ベースに */
+body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: linear-gradient(135deg, #a1c4fd, #c2e9fb);
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+}
+
+/* コンテナのスタイル */
+.container {
+    width: 80%;
+    max-width: 800px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.3);
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+/* h1～h6 のスタイル */
+h1, h2, h3, h4, h5, h6 {
+    color: #fff;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+h1 { font-size: 2.5em; }
+h2 { font-size: 2em; }
+h3 { font-size: 1.75em; }
+h4 { font-size: 1.5em; }
+h5 { font-size: 1.25em; }
+h6 { font-size: 1em; }
+
+/* 段落スタイル */
+p {
+    font-size: 1.2em;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* リストスタイル */
+ul, ol {
+    text-align: left;
+    padding: 10px 20px;
+}
+
+ul {
+    list-style-type: disc;
+}
+
+ol {
+    list-style-type: decimal;
+}
+
+/* テーブルスタイル */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    border: 1px solid #fff;
+    padding: 10px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.5);
+}
+
+th {
+    background: rgba(255, 255, 255, 0.7);
+    font-weight: bold;
+}
+
+/* ボタンスタイル */
+.button {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 1.2em;
+    color: white;
+    background: linear-gradient(45deg, #42a5f5, #64b5f6);
+    border: none;
+    border-radius: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
